@@ -1,5 +1,6 @@
 package ro.pub.cs.systems.eim.colocviu1_2;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
@@ -22,11 +23,11 @@ public class Colocviu1_2MainActivity extends AppCompatActivity {
 
     private ButtonClickListener buttonClickListener = new ButtonClickListener();
 
+    String statusService = "STOPPED";
 
-    //    String serviceStatus = Constants.SERVICE_STOPPPED;
-//
-//    MessageBroadcastReceiver messageBroadcastReceiver;
-//    IntentFilter intentFilter;
+
+    MessageBroadcastReceiver messageBroadcastReceiver;
+    IntentFilter intentFilter;
     private class ButtonClickListener implements View.OnClickListener {
 
         @Override
@@ -45,9 +46,17 @@ public class Colocviu1_2MainActivity extends AppCompatActivity {
                 startActivityForResult(intent, 2024);
             }
 
+            if (calculateSum(allTerms.getText().toString()) >= 10 && statusService.equals("STOPPED")) {
+                Intent intent = new Intent(getApplicationContext(), MyService.class);
+                intent.putExtra("SUM", calculateSum(allTerms.getText().toString()));
+                getApplicationContext().startService(intent);
+                statusService = "STARTED";
+            }
 
         }
     }
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +87,22 @@ public class Colocviu1_2MainActivity extends AppCompatActivity {
             nextTerm.setText("");
             allTerms.setText("");
         }
+
+        messageBroadcastReceiver = new MessageBroadcastReceiver();
+        intentFilter = new IntentFilter();
+        intentFilter.addAction("actiune1");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver(messageBroadcastReceiver, intentFilter, Context.RECEIVER_EXPORTED);
+    }
+
+    @Override
+    protected void onPause() {
+        unregisterReceiver(messageBroadcastReceiver);
+        super.onPause();
     }
 
     @Override
@@ -111,5 +136,25 @@ public class Colocviu1_2MainActivity extends AppCompatActivity {
         if (requestCode == 2024) {
             Toast.makeText(this, "The activity returned with result " + resultCode, Toast.LENGTH_LONG).show();
         }
+    }
+
+    public static int calculateSum(String expression) {
+        // Split the expression by " + " delimiter
+        String[] numbers = expression.split(" \\+ ");
+
+        int sum = 0;
+        for (String number : numbers) {
+            // Convert each substring to an integer and add to the sum
+            sum += Integer.parseInt(number.trim());
+        }
+
+        return sum;
+    }
+
+    @Override
+    public void onDestroy() {
+        Intent intent = new Intent(this, MyService.class);
+        stopService(intent);
+        super.onDestroy();
     }
 }
